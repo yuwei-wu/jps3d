@@ -391,6 +391,7 @@ vec_E<std::pair<Veci<Dim>, int8_t>> DMPlanner<Dim>::createMask(int pow) {
   return mask;
 }
 
+
 template <int Dim>
 void DMPlanner<Dim>::setMap(const std::shared_ptr<JPS::MapUtil<Dim>> &map_util,
                             const Vecf<Dim> &pos) {

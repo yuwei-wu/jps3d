@@ -7,6 +7,8 @@
 
 #include <iostream>
 #include <jps_basis/data_type.h>
+#include <pcl/point_cloud.h>
+#include <pcl/kdtree/kdtree_flann.h>
 
 namespace JPS {
   ///The type of map data Tmap is defined as a 1D array
@@ -19,6 +21,85 @@ namespace JPS {
     public:
       ///Simple constructor
       MapUtil() {}
+
+      // the point cloud has been inflated
+      void readMap(pcl::PointCloud<pcl::PointXYZ>::Ptr pclptr, const Veci<Dim>& dim, Eigen::Vector3d ori, double res)
+      {
+
+
+        map_.clear();
+
+        origin_d_(0) = ori[0];
+        origin_d_(1) = ori[1];
+        origin_d_(2) = ori[2];
+
+
+        for (unsigned int i = 0; i < 3; i++)
+        {
+          dim_(i) = dim(i);
+        }
+    
+        res_ = res;
+
+        int total_size = dim(0) * dim(1) * dim(2);
+        // printf("In reader3, size=%f, %f, %f\n", dim[0], dim[1], dim[2]);
+        // printf("reading_map4\n");
+
+        map_.resize(dim(0) * dim(1) * dim(2), 0);
+
+
+        for (size_t i = 0; i < pclptr->points.size(); ++i)
+        {
+
+         // Let's find the cell coordinates of the point expresed in a system of coordinates that has as origin the (minX,
+         // minY, minZ) point of the map
+           int x = std::round((pclptr->points[i].x - origin_d_(0)) / res - 0.5);
+           int y = std::round((pclptr->points[i].y - origin_d_(1)) / res - 0.5);
+           int z = std::round((pclptr->points[i].z - origin_d_(2)) / res - 0.5);
+
+          // Force them to be positive:
+          x = (x > 0) ? x : 0;
+          y = (y > 0) ? y : 0;
+          z = (z > 0) ? z : 0;
+          // this next formula works only when x, y, z are in cell coordinates (relative to the origin of the map)
+          int id = x + dim_(0) * y + dim_(0) * dim_(1) * z;
+          
+          
+
+
+          if (id >= 0 && id < total_size)
+          {
+            map_[id] = 100;
+          }
+
+
+           // now let's inflate the voxels around that point
+          int m = (int)floor(( 0.35 / res));
+          // m is the amount of cells to inflate in each direction
+
+          for (int ix = x - m; ix <= x + m; ix++)
+          {
+            for (int iy = y - m; iy <= y + m; iy++)
+            {
+              for (int iz = z - m; iz <= z + m; iz++)
+              {
+                int id_infl = ix + dim_(0) * iy + dim_(0) * dim_(1) * iz;
+                if (id_infl >= 0 && id_infl < total_size)  // Ensure we are inside the map
+                {
+                  map_[id_infl] = 100;
+                }
+              }
+            }
+          }
+
+        } 
+      printf("finished reading map\n");
+      }
+
+
+
+
+
       ///Get map data
       Tmap getMap() { return map_; }
       ///Get resolution

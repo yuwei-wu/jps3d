@@ -100,7 +100,7 @@ In other words, `JPS` guarantees the optimality but saves a significant amount o
 
 ![Visualization](./data/corridor.png)
 ```bash
-$ ./build/test_planner_2d ./data/corridor.yaml
+$ ./build/test_planner_2d ../data/corridor.yaml
 start: 2.5  -2
 goal:  35 2.5
 origin:  0 -5
@@ -120,7 +120,7 @@ To generate map in `yaml` format which can be loaded directly in the test node, 
 User can easily change the location of blocks in the source code.
 
 ## DMP Usage
-`DMPlanner` stands for distance map planner which utilizes the artificial potential field to find a safer local path around a given path. We changed the API for setting map of `DMPlanner` in v1.1.
+As mentioned before, `DMPlanner` stands for distance map planner which utilizes the artificial potential field to find a safer local path around a given path for the robot to navigate.
 The key feature of this planner is its ability to push the path away from obstacles as much as possible. An example is given in the following figure
 [example_dmp.png](https://github.com/sikang/jps3d/blob/master/data/example_dmp.png), where red path comes from `JPS` which is always attached to obstacles and blue path is derived from `DMP` which is much safer.
 
@@ -128,7 +128,7 @@ The key feature of this planner is its ability to push the path away from obstac
 
 The code for generating this figure is given in [`test/test_distance_map_2d.cpp`](https://github.com/sikang/jps3d/blob/master/test/test_distance_map_planner_2d.cpp).
 ```bash
-$ ./build/test_distance_map_planner_2d ./data/corridor.yaml
+$ ./build/test_distance_map_planner_2d ../data/corridor.yaml
 start: 2.5  -2
 goal:  35 2.5
 origin:  0 -5
@@ -136,10 +136,10 @@ dim: 799 199
 resolution: 0.05
 JPS Planner takes: 7.000000 ms
 JPS Path Distance: 35.109545
-DMP Planner takes: 8.000000 ms
-DMP Path Distance: 37.186501
+DMP Planner takes: 104.000000 ms
+DMP Path Distance: 37.062964
 ```
 
 ## Doxygen
-For more details, please refer to [Doxygen](https://kumarrobotics.github.io/jps3d).
+For more details, please refer to [Doxygen](https://sikang.github.io/jps3d).
 

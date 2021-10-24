@@ -7,6 +7,8 @@
 
 #include <jps_basis/data_type.h>
 
+
+/***
 ///Template for transforming a vector
 template <class T, class TF>
 vec_E<T> transform_vec(const vec_E<T> &t, const TF &tf) {
@@ -25,6 +27,8 @@ decimal_t total_distance(const vec_E<T>& vs){
 
   return dist;
 }
+***/
+
 
 ///Transform all entries in a vector using given TF
 #define transform_vec3 transform_vec<Vec3f, Aff3f>

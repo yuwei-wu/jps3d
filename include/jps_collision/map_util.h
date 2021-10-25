@@ -30,27 +30,69 @@ namespace JPS {
        * @param res map resolution
        */
 
-      void initMap(const Veci<Dim>& dim, Eigen::Vector3d ori, double res){
+      void initMap(const Veci<Dim>& dim, Veci<Dim>& ori, decimal_t res, decimal_t inflated_ratio){
         map_.clear();
-        origin_d_(0) = ori[0];
-        origin_d_(1) = ori[1];
-        origin_d_(2) = ori[2];
-        for (unsigned int i = 0; i < 3; i++){dim_(i) = dim(i);}
+        
+        for (unsigned int i = 0; i < Dim; i++){
+          dim_(i) = dim(i);
+          origin_d_(i) = ori[i];
+        }
         res_ = res;
-        map_.resize(dim(0) * dim(1) * dim(2), 0);
+        inflated_r_ = inflated_ratio;
+        total_size_ = Dim == 2 ? dim_(0) * dim_(1) :
+                                    dim_(0) * dim_(1) * dim_(2);
+        map_.resize(total_size_, 0);
+        std::fill(map_.begin(), map_.end(), val_unknown);
       }
+
+      /**
+       * @brief update Cylinders
+       *
+       * @param cylinder_ptr new cylinders // only for 2-d map
+       */
+      void updateCylinders(pcl::PointCloud<pcl::PointXYZ>::Ptr cylinder_ptr){
+        
+
+        for (size_t i = 0; i < cylinder_ptr->points.size(); ++i)
+        {
+          int x = std::round((cylinder_ptr->points[i].x - origin_d_(0)) / res_ - 0.5);
+          int y = std::round((cylinder_ptr->points[i].y - origin_d_(1)) / res_ - 0.5);
+          double width = cylinder_ptr->points[i].z;
+  
+          int inf_step = ceil((1.0 + inflated_r_)*width / res_);
+        
+          for (int ix = x - inf_step; ix <= x + inf_step; ix++)
+          {
+            for (int iy = y - inf_step; iy <= y + inf_step; iy++)
+            {
+              int id_infl = ix + dim_(0) * iy;
+
+              if (id_infl >= 0 && id_infl < total_size_)  // Ensure we are inside the map
+              {
+                map_[id_infl] = val_occ;
+              }
+            }
+          }
+        }
+      }
+
+
+      void buildSSMap(pcl::PointCloud<pcl::PointXYZ>::Ptr cylinder_ptr){
+        
+      }
+
 
       // the point cloud has been inflated
       void readMap(pcl::PointCloud<pcl::PointXYZ>::Ptr pclptr)
       {
-        int total_size = dim_(0) * dim_(1) * dim_(2);
+      
         for (size_t i = 0; i < pclptr->points.size(); ++i)
         {
-         // Let's find the cell coordinates of the point expresed in a system of coordinates that has as origin the (minX,
-         // minY, minZ) point of the map
-           int x = std::round((pclptr->points[i].x - origin_d_(0)) / res - 0.5);
-           int y = std::round((pclptr->points[i].y - origin_d_(1)) / res - 0.5);
-           int z = std::round((pclptr->points[i].z - origin_d_(2)) / res - 0.5);
+          // find the cell coordinates of the point expresed in a system of coordinates that has as origin the (minX,
+          // minY, minZ) point of the map
+          int x = std::round((pclptr->points[i].x - origin_d_(0)) / res_ - 0.5);
+          int y = std::round((pclptr->points[i].y - origin_d_(1)) / res_ - 0.5);
+          int z = std::round((pclptr->points[i].z - origin_d_(2)) / res_ - 0.5);
 
           // Force them to be positive:
           x = (x > 0) ? x : 0;
@@ -59,12 +101,12 @@ namespace JPS {
           // this next formula works only when x, y, z are in cell coordinates (relative to the origin of the map)
           int id = x + dim_(0) * y + dim_(0) * dim_(1) * z;
 
-          if (id >= 0 && id < total_size)
+          if (id >= 0 && id < total_size_)
           {
-            map_[id] = 100;
+            map_[id] = val_occ;
           }
           // now let's inflate the voxels around that point
-          int m = (int)floor(( 0.35 / res));
+          int m = ceil(inflated_r_ / res_);
           // m is the amount of cells to inflate in each direction
           for (int ix = x - m; ix <= x + m; ix++)
           {
@@ -73,9 +115,9 @@ namespace JPS {
               for (int iz = z - m; iz <= z + m; iz++)
               {
                 int id_infl = ix + dim_(0) * iy + dim_(0) * dim_(1) * iz;
-                if (id_infl >= 0 && id_infl < total_size)  // Ensure we are inside the map
+                if (id_infl >= 0 && id_infl < total_size_)  // Ensure we are inside the map
                 {
-                  map_[id_infl] = 100;
+                  map_[id_infl] = val_occ;
                 }
               }
             }
@@ -344,6 +386,10 @@ namespace JPS {
     protected:
       ///Resolution
       decimal_t res_;
+      // Inflated ratio
+      decimal_t inflated_r_;
+      // total size
+      double total_size_;
       ///Origin, float type
       Vecf<Dim> origin_d_;
       ///Dimension, int type

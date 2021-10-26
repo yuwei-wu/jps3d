@@ -30,9 +30,8 @@ namespace JPS {
        * @param res map resolution
        */
 
-      void initMap(const Veci<Dim>& dim, Veci<Dim>& ori, decimal_t res, decimal_t inflated_ratio){
+      void initMap(const Veci<Dim> dim, Vecf<Dim> ori, decimal_t res, decimal_t inflated_ratio){
         map_.clear();
-        
         for (unsigned int i = 0; i < Dim; i++){
           dim_(i) = dim(i);
           origin_d_(i) = ori[i];
@@ -40,9 +39,10 @@ namespace JPS {
         res_ = res;
         inflated_r_ = inflated_ratio;
         total_size_ = Dim == 2 ? dim_(0) * dim_(1) :
-                                    dim_(0) * dim_(1) * dim_(2);
+                                 dim_(0) * dim_(1) * dim_(2);
         map_.resize(total_size_, 0);
-        std::fill(map_.begin(), map_.end(), val_unknown);
+        std::fill(map_.begin(), map_.end(), val_free);
+
       }
 
       /**
@@ -55,19 +55,30 @@ namespace JPS {
 
         for (size_t i = 0; i < cylinder_ptr->points.size(); ++i)
         {
-          int x = std::round((cylinder_ptr->points[i].x - origin_d_(0)) / res_ - 0.5);
-          int y = std::round((cylinder_ptr->points[i].y - origin_d_(1)) / res_ - 0.5);
+          int x = std::max((int)std::round((cylinder_ptr->points[i].x - origin_d_(0)) / res_ - 0.5), 0);
+          int y = std::max((int)std::round((cylinder_ptr->points[i].y - origin_d_(1)) / res_ - 0.5), 0);
           double width = cylinder_ptr->points[i].z;
   
+          // this next formula works only when x, y, z are in cell coordinates (relative to the origin of the map)
+          int id = x + dim_(0) * y;
+
+          if (id == val_cyl_crt){
+            continue;
+          }
+
+          if (id >= 0 && id < total_size_)
+          {
+            map_[id] = val_cyl_crt;
+          }         
+
           int inf_step = ceil((1.0 + inflated_r_)*width / res_);
-        
           for (int ix = x - inf_step; ix <= x + inf_step; ix++)
           {
             for (int iy = y - inf_step; iy <= y + inf_step; iy++)
             {
               int id_infl = ix + dim_(0) * iy;
 
-              if (id_infl >= 0 && id_infl < total_size_)  // Ensure we are inside the map
+              if (id_infl >= 0 && id_infl < total_size_ && id_infl != val_cyl_crt)  // Ensure we are inside the map
               {
                 map_[id_infl] = val_occ;
               }
@@ -400,6 +411,8 @@ namespace JPS {
       int8_t val_free = 0;
       ///Assume unknown cell has value -1
       int8_t val_unknown = -1;
+      ///Center of Cylinders
+      int8_t val_cyl_crt = 50;
   };
 
   typedef MapUtil<2> OccMapUtil;

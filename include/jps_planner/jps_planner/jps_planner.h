@@ -14,6 +14,7 @@ class GraphSearch;
  * @brief Abstract base for planning
  */
 template <int Dim>
+
 class JPSPlanner
 {
   public:
@@ -51,6 +52,10 @@ class JPSPlanner
     vec_Vecf<Dim> getCloseSet() const;
     ///Get all the nodes
     vec_Vecf<Dim> getAllSet() const;
+
+    typedef std::shared_ptr<JPSPlanner> Ptr;
+
+
   protected:
     ///Assume using 3D voxel map for all 2d and 3d planning
     std::shared_ptr<JPS::MapUtil<Dim>> map_util_;

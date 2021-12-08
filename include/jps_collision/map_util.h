@@ -58,7 +58,7 @@ namespace JPS {
           int x = std::max((int)std::round((cylinder_ptr->points[i].x - origin_d_(0)) / res_ - 0.5), 0);
           int y = std::max((int)std::round((cylinder_ptr->points[i].y - origin_d_(1)) / res_ - 0.5), 0);
           double width = cylinder_ptr->points[i].z;
-  
+          
           // this next formula works only when x, y, z are in cell coordinates (relative to the origin of the map)
           int id = x + dim_(0) * y;
 
@@ -71,11 +71,13 @@ namespace JPS {
             map_[id] = val_cyl_crt;
           }         
 
-          int inf_step = ceil((1.0 + inflated_r_)*width / res_);
+          int inf_step = ceil((1.0 + inflated_r_)*width*0.5 / res_); 
+          // fine, we can directly set it as the bounding box
+          // @yuwei
           for (int ix = x - inf_step; ix <= x + inf_step; ix++)
           {
             for (int iy = y - inf_step; iy <= y + inf_step; iy++)
-            {
+            { 
               int id_infl = ix + dim_(0) * iy;
 
               if (id_infl >= 0 && id_infl < total_size_ && id_infl != val_cyl_crt)  // Ensure we are inside the map
@@ -282,6 +284,42 @@ namespace JPS {
 
         return cloud;
       }
+
+
+      void getpclCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr &pclptr) {
+        Veci<Dim> n;
+        if(Dim == 3) {
+          for (n(0) = 0; n(0) < dim_(0); n(0)++) {
+            for (n(1) = 0; n(1) < dim_(1); n(1)++) {
+              for (n(2) = 0; n(2) < dim_(2); n(2)++) {
+                if (isOccupied(getIndex(n))){
+                  pcl::PointXYZ pt;
+                  auto temp =  intToFloat(n);
+                  pt.x = temp(0);
+                  pt.y = temp(1);
+                  pt.z = temp(2);
+                  pclptr->points.push_back(pt);
+                }
+              }
+            }
+          }
+        }
+        else if (Dim == 2) {
+          for (n(0) = 0; n(0) < dim_(0); n(0)++) {
+            for (n(1) = 0; n(1) < dim_(1); n(1)++) {
+              if (isOccupied(getIndex(n))){
+                pcl::PointXYZ pt;
+                auto  temp =  intToFloat(n);
+                pt.x = temp(0);
+                pt.y = temp(1);
+                pt.z = 0.2;
+                pclptr->points.push_back(pt);
+              }
+            }
+          }
+        }
+      }
+
 
       ///Get free voxels
       vec_Vecf<Dim> getFreeCloud() {
